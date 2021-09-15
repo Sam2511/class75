@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, Image} from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, Alert, Image, KeyboardAvoidingView, ToastAndroid} from 'react-native'
 import {BarCodeScanner} from "expo-barcode-scanner"
 import * as Permissions from 'expo-permissions' 
 import * as firebase from "firebase"
@@ -102,24 +102,103 @@ export default class TransactionScreen extends React.Component{
         })
 
     }
+
+    bookEligibility =async()=>{
+        const book = await db.collection("books").where("bookId","==",this.state.scannedBookID).get()
+        
+        var transactionType = "";
+        if(book.docs.length === 0){
+            transactionType= false
+        }else{
+            book.docs.map((doc)=>{
+                var bookRef= doc.data()
+                if(bookRef.bookAvailibility){
+                   transactionType= "Issue"
+                } else {
+                    transactionType = "Return";
+                }
+            })
+        }
+
+        return transactionType;
+    }
+    
+    studentEligibilityForIssue =async()=>{
+        const studentRef = await db.collection("students").where("studentId","==",this.state.scannedStudentID).get()
+        var isEligible= "";
+        if(studentRef.docs.length=== 0){
+            this.setState({
+                scannedStudentID: "",
+                scannedBookID: ""
+            })
+            Alert.alert("STUDENT ID IS INCORRECT HUMAN!")
+            isEligible= false
+        }else{
+            studentRef.docs.map((doc)=>{
+                var student= doc.data()
+                if(student.numberOfBooksIssued<2){
+                   isEligible= true
+                   
+                } else {
+                    isEligible = false;
+                    this.setState({
+                        scannedStudentID: "",
+                        scannedBookID: ""
+                    })
+                    Alert.alert("STUDENT ALREADY HAS 2 BOOKS HUMAN")
+                }
+            })
+        }
+
+        return isEligible;
+    }
+    
+    studentEligibilityForReturn =async()=>{
+
+        const transactionRef = await db.collection("transactions").where("bookId","==",this.state.scannedBookID).limit(1).get()
+        var isEligible= "";
+        
+            transactionRef.docs.map((doc)=>{
+                var transaction= doc.data()
+                if(transaction.studentId===this.state.scannedStudentID){
+                   isEligible= true
+                   
+                } else {
+                    isEligible = false;
+                    this.setState({
+                        scannedStudentID: "",
+                        scannedBookID: ""
+                    })
+                    Alert.alert("THE BOOK WAS NOT ISSUED BY THIS STUDENT")
+                }
+            })
+        
+
+        return isEligible;
+    }
     
     handleTransaction =async()=>{
-        var message;
-        db.collection("books").doc(this.state.scannedBookID).get()
-        .then((doc)=>{
-            var book= doc.data()
-            if(book.bookAvailibility){
-                this.initiateBookIssue()
-                message = "Book Issued";
-            } else {
-                this.initiateBookReturn()
-                message = "Book Returned";
-            }    
-        });
+        var transactionType= await this.bookEligibility()
 
-        this.setState({
-            transactionMessage: message
-        })
+        if(!transactionType){
+            Alert.alert("THE BOOK IS NOT THERE ")
+            this.setState({
+                scannedStudentID: "",
+                scannedBookID: ""
+            })
+        }else if(transactionType === "Issue"){
+            var isEligible = await this.studentEligibilityForIssue()
+            if(isEligible){
+                this.initiateBookIssue()
+                Alert.alert("BOOK ISSUED SUCCESSFULLY")
+            }
+        }else{
+            var isEligible = await this.studentEligibilityForReturn()
+            if(isEligible){
+                this.initiateBookReturn()
+                Alert.alert("BOOK RETURNED SUCCESSFULLY")
+            }
+        }
     }
 
     
@@ -131,7 +210,7 @@ export default class TransactionScreen extends React.Component{
             )
         }else if(this.state.buttonState==="normal"){
             return(
-                <View style = {styles.container}>
+                <KeyboardAvoidingView style = {styles.container} behavior = "padding" enabled>
                     <View>
                         <Image source ={require("../assets/booklogo.jpg")}/>
                         <Text style = {{textAlign: 'center', fontSize: 30}}>Wireless Library</Text>
@@ -139,7 +218,16 @@ export default class TransactionScreen extends React.Component{
                     
                     
                     <View style= {styles.inputView}>
-                        <TextInput placeholder= "Enter Book ID" value={this.state.scannedBookID} style= {styles.inputBox}/>
+                        <TextInput onChangeText= {
+                            (text)=>{
+                                this.setState(
+                                    {
+                                        scannedBookID: text
+                                    }
+                                )
+                            }
+                        }
+                        placeholder= "Enter Book ID" value={this.state.scannedBookID} style= {styles.inputBox}/>
                         <TouchableOpacity style= {styles.scanButton} onPress= {()=>{
                                 this.getCameraPermission("bookID")
                         }}>
@@ -148,7 +236,15 @@ export default class TransactionScreen extends React.Component{
                     </View>
                     
                     <View style= {styles.inputView}>
-                        <TextInput placeholder= "Enter Student ID" value={this.state.scannedStudentID} style= {styles.inputBox}/>
+                        <TextInput onChangeText= {
+                            (text)=>{
+                                this.setState(
+                                    {
+                                        scannedStudentID: text
+                                    }
+                                )
+                            }
+                        } placeholder= "Enter Student ID" value={this.state.scannedStudentID} style= {styles.inputBox}/>
                         <TouchableOpacity style= {styles.scanButton} onPress= {()=>{
                                 this.getCameraPermission("bookID")
                         }}>
@@ -163,7 +259,7 @@ export default class TransactionScreen extends React.Component{
                     </TouchableOpacity>
                     
                     
-                </View>
+                </KeyboardAvoidingView>
             )
         }
        
