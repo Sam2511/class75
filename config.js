@@ -2,12 +2,12 @@ import * as firebase from "firebase"
 require("@firebase/firestore")
 
 var firebaseConfig = {
-  apiKey: "AIzaSyDCqsiLGh_2NFLO9GBsM9oQVXa0zqlNi6U",
-  authDomain: "library-85962.firebaseapp.com",
-  projectId: "library-85962",
-  storageBucket: "library-85962.appspot.com",
-  messagingSenderId: "335403921549",
-  appId: "1:335403921549:web:7ce7159bf52b4efe08f2c4"
+  apiKey: "AIzaSyAclrtTJ7o4YBFBMtoCvcnrXiInHzSoqoE",
+  authDomain: "project71-10ba6.firebaseapp.com",
+  projectId: "project71-10ba6",
+  storageBucket: "project71-10ba6.appspot.com",
+  messagingSenderId: "785191511701",
+  appId: "1:785191511701:web:aa7313c70992b66e811d9c"
 };
 
 // Initialize Firebase

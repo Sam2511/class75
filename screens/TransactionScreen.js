@@ -212,7 +212,7 @@ export default class TransactionScreen extends React.Component{
             return(
                 <KeyboardAvoidingView style = {styles.container} behavior = "padding" enabled>
                     <View>
-                        <Image source ={require("../assets/booklogo.jpg")}/>
+                        <Image source ={require("../assets/booklogo.jpg")} style = {{width: 200, height: 200}}/>
                         <Text style = {{textAlign: 'center', fontSize: 30}}>Wireless Library</Text>
                     </View>
                     
